@@ -67,7 +67,7 @@ def run_tests(code: str, test_harness: str, timeout: int = 10) -> ExecResult:
     start = time.monotonic()
     try:
         result = subprocess.run(
-            ["python", "-c", harness],
+            ["python3", "-c", harness],
             capture_output=True,
             text=True,
             timeout=timeout,

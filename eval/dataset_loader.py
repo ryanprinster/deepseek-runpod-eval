@@ -12,7 +12,7 @@ DATASET_NAME = "fjzzq2002/impossible_livecodebench"
 SPLIT_MAP = {
     "original": "original",
     "conflicting": "conflicting",
-    "one_off": "one_off",
+    "one_off": "oneoff",
 }
 
 

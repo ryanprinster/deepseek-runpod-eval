@@ -10,11 +10,11 @@ RUNPOD_ENDPOINT_ID = os.environ.get("RUNPOD_ENDPOINT_ID", "")
 BASE_URL = f"https://api.runpod.ai/v2/{RUNPOD_ENDPOINT_ID}/openai/v1"
 
 # Model
-MODEL_NAME = "deepseek-ai/DeepSeek-R1-Distill-Qwen-7B"
+MODEL_NAME = "deepseek-ai/deepseek-r1-distill-qwen-7b"
 
 # Inference defaults
 TEMPERATURE = float(os.environ.get("TEMPERATURE", "0.6"))
-MAX_TOKENS = int(os.environ.get("MAX_TOKENS", "8192"))
+MAX_TOKENS = int(os.environ.get("MAX_TOKENS", "32768"))
 N_SAMPLES = int(os.environ.get("N_SAMPLES", "1"))
 
 # Paths
