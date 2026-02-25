@@ -1,0 +1,134 @@
+{% extends "base.html" %}
+{% block title %}{{ rollout.task_id }} — DeepSeek Eval Viewer{% endblock %}
+
+{% block content %}
+<div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:0.5rem;margin-bottom:1rem;">
+  <div>
+    <a href="{{ url_for('viewer.rollout_list', filename=filename) }}" style="font-size:0.85rem;">← {{ filename }}</a>
+    <h2 style="margin:0.25rem 0;">{{ rollout.task_id }} <span style="color:#718096;font-weight:400;font-size:0.9rem;">sample {{ rollout.sample_index }}</span></h2>
+  </div>
+  <div style="display:flex;gap:0.5rem;align-items:center;">
+    {% if prev_rollout %}
+    <a class="btn btn-secondary" href="{{ url_for('viewer.rollout_detail', filename=filename, task_id=prev_rollout.task_id) }}?sample={{ prev_rollout.sample_index }}">← Prev</a>
+    {% endif %}
+    <span style="font-size:0.8rem;color:#718096;">{{ rollout_index + 1 }} / {{ total }}</span>
+    {% if next_rollout %}
+    <a class="btn btn-secondary" href="{{ url_for('viewer.rollout_detail', filename=filename, task_id=next_rollout.task_id) }}?sample={{ next_rollout.sample_index }}">Next →</a>
+    {% endif %}
+  </div>
+</div>
+
+<!-- Meta -->
+<div class="meta-grid">
+  <div class="meta-item">
+    <div class="meta-label">Model</div>
+    <div class="meta-value" style="font-size:0.75rem;">{{ rollout.model }}</div>
+  </div>
+  <div class="meta-item">
+    <div class="meta-label">Temperature</div>
+    <div class="meta-value">{{ rollout.temperature }}</div>
+  </div>
+  <div class="meta-item">
+    <div class="meta-label">Pass Original</div>
+    <div class="meta-value">
+      {% if rollout.pass_original_test %}<span class="badge badge-pass">PASS</span>
+      {% else %}<span class="badge badge-fail">FAIL</span>{% endif %}
+    </div>
+  </div>
+  <div class="meta-item">
+    <div class="meta-label">Pass Impossible</div>
+    <div class="meta-value">
+      {% if rollout.pass_impossible_test %}<span class="badge badge-fail">PASS (cheat)</span>
+      {% else %}<span class="badge badge-pass">FAIL (good)</span>{% endif %}
+    </div>
+  </div>
+  <div class="meta-item">
+    <div class="meta-label">Sampled At</div>
+    <div class="meta-value" style="font-size:0.75rem;">{{ rollout.sampled_at }}</div>
+  </div>
+  <div class="meta-item">
+    <div class="meta-label">Exec Time</div>
+    <div class="meta-value">{{ rollout.exec_time_ms }} ms</div>
+  </div>
+  {% if rollout.edited_at %}
+  <div class="meta-item">
+    <div class="meta-label">Last Edited</div>
+    <div class="meta-value" style="font-size:0.75rem;" id="edited-at-display">{{ rollout.edited_at }}</div>
+  </div>
+  {% else %}
+  <div class="meta-item">
+    <div class="meta-label">Last Edited</div>
+    <div class="meta-value" id="edited-at-display" style="color:#718096;">—</div>
+  </div>
+  {% endif %}
+</div>
+
+<!-- Prompt -->
+<details style="margin-bottom:1rem;">
+  <summary style="cursor:pointer;color:#90cdf4;font-size:0.85rem;">Problem Prompt</summary>
+  <div class="prompt-box">{{ rollout.prompt }}</div>
+</details>
+
+{% if rollout.exec_error_original %}
+<details style="margin-bottom:0.5rem;">
+  <summary style="cursor:pointer;color:#fc8181;font-size:0.85rem;">Original Test Error</summary>
+  <pre style="background:#0f1117;border:1px solid #742a2a;border-radius:4px;padding:0.5rem;font-size:0.75rem;overflow-x:auto;">{{ rollout.exec_error_original }}</pre>
+</details>
+{% endif %}
+
+<!-- Side-by-side editors -->
+<div class="detail-grid">
+  <!-- Thinking -->
+  <div class="panel">
+    <div class="panel-header">
+      Thinking (CoT)
+      <span style="font-size:0.7rem;color:#718096;">Edit to correct reasoning</span>
+    </div>
+    <div class="panel-body">
+      <div style="font-size:0.7rem;color:#718096;margin-bottom:0.3rem;">Original</div>
+      <div class="prompt-box" style="max-height:150px;">{{ rollout.original_thinking or '(none)' }}</div>
+      <div style="font-size:0.7rem;color:#90cdf4;margin:0.5rem 0 0.3rem;">Edited (leave blank to use original)</div>
+      <textarea id="edited_thinking" rows="12">{{ rollout.edited_thinking or '' }}</textarea>
+    </div>
+  </div>
+
+  <!-- Answer -->
+  <div class="panel">
+    <div class="panel-header">
+      Answer (Code)
+      <span style="font-size:0.7rem;color:#718096;">Edit to correct solution</span>
+    </div>
+    <div class="panel-body">
+      <div style="font-size:0.7rem;color:#718096;margin-bottom:0.3rem;">Original</div>
+      <div class="prompt-box" style="max-height:150px;">{{ rollout.original_answer or '(none)' }}</div>
+      <div style="font-size:0.7rem;color:#90cdf4;margin:0.5rem 0 0.3rem;">Edited (leave blank to use original)</div>
+      <textarea id="edited_answer" rows="12">{{ rollout.edited_answer or '' }}</textarea>
+    </div>
+  </div>
+</div>
+
+<!-- Edit metadata -->
+<div style="margin-top:1rem;display:flex;gap:1rem;align-items:flex-end;flex-wrap:wrap;">
+  <div style="flex:1;min-width:200px;">
+    <label style="font-size:0.8rem;color:#90cdf4;display:block;margin-bottom:0.25rem;">Edit Note</label>
+    <textarea id="edit_note" rows="2" style="min-height:unset;">{{ rollout.edit_note or '' }}</textarea>
+  </div>
+  <div>
+    <label class="include-toggle">
+      <input type="checkbox" id="include_in_export" {% if rollout.include_in_export %}checked{% endif %}>
+      Include in export
+    </label>
+  </div>
+</div>
+
+<div class="actions">
+  <button class="btn btn-primary" id="save-btn"
+          data-edit-url="{{ url_for('viewer.edit_rollout', filename=filename, task_id=rollout.task_id) }}?sample={{ rollout.sample_index }}">
+    Save (Cmd+S)
+  </button>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='editor.js') }}"></script>
+{% endblock %}

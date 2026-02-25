@@ -1,0 +1,69 @@
+{% extends "base.html" %}
+{% block title %}{{ filename }} — DeepSeek Eval Viewer{% endblock %}
+
+{% block content %}
+<div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:0.5rem;margin-bottom:1rem;">
+  <h2 style="margin:0;">{{ filename }}</h2>
+  <div style="display:flex;gap:0.5rem;">
+    <a class="btn btn-secondary" href="{{ url_for('viewer.index') }}">← Back</a>
+    <a class="btn btn-success" href="{{ url_for('viewer.export_rollouts', filename=filename) }}">Export SFT JSONL</a>
+  </div>
+</div>
+
+<p style="color:#718096;font-size:0.85rem;">{{ rollouts|length }} rollouts</p>
+
+<table>
+  <thead>
+    <tr>
+      <th>#</th>
+      <th>Task ID</th>
+      <th>Sample</th>
+      <th>Pass Original</th>
+      <th>Pass Impossible</th>
+      <th>Edited</th>
+      <th>Export</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for r in rollouts %}
+    <tr>
+      <td style="color:#718096;">{{ loop.index }}</td>
+      <td>
+        <a href="{{ url_for('viewer.rollout_detail', filename=filename, task_id=r.task_id) }}?sample={{ r.sample_index }}">
+          {{ r.task_id }}
+        </a>
+      </td>
+      <td>{{ r.sample_index }}</td>
+      <td>
+        {% if r.pass_original_test %}
+          <span class="badge badge-pass">PASS</span>
+        {% else %}
+          <span class="badge badge-fail">FAIL</span>
+        {% endif %}
+      </td>
+      <td>
+        {% if r.pass_impossible_test %}
+          <span class="badge badge-fail">PASS (cheat)</span>
+        {% else %}
+          <span class="badge badge-pass">FAIL (good)</span>
+        {% endif %}
+      </td>
+      <td>
+        {% if r.edited_at %}
+          <span class="badge badge-edited">Edited</span>
+        {% else %}
+          <span class="badge badge-null">—</span>
+        {% endif %}
+      </td>
+      <td>
+        {% if r.include_in_export %}
+          <span class="badge badge-pass">Yes</span>
+        {% else %}
+          <span class="badge badge-null">No</span>
+        {% endif %}
+      </td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% endblock %}
